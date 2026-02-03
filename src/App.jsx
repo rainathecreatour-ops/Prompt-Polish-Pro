@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, RefreshCw, Zap, BookOpen, Copy, Check, RotateCcw, Image, User, Briefcase, Lightbulb, Code, Palette, TrendingUp, MessageSquare, Film, Lock } from 'lucide-react';
 
@@ -163,71 +164,108 @@ Keep responses concise and supportive. Never overwhelm the user.`;
     setShowQuickActions(false);
     setShowInactivityPrompt(false);
 
-   try {
-  const conversationHistory = messages.map(msg => ({
-    role: msg.role,
-    content: msg.content
-  }));
+    try {
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      system: systemPrompt,
-      messages: [...conversationHistory, userMessage],
-    })
-  });
+ const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    system: systemPrompt,
+    messages: [...conversationHistory, userMessage],
+  })
+});
 
-  const data = await response.json();
-  
-  if (!response.ok || !data.content) {
-    throw new Error('Invalid response from API');
-  }
+      const data = await response.json();
 
-  const assistantResponse = data.content
+// Check if response is OK
+if (!response.ok) {
+  console.error('API Error:', data);
+  } catch (error) {
+  console.error("Error:", error);
+  setShowQuickActions(true);
+} finally {
+  setIsLoading(false);
+}
+  setShowQuickActions(true);
+  return;
+}
+
+// Parse the response
+let assistantResponse = '';
+if (data.content && Array.isArray(data.content)) {
+  assistantResponse = data.content
     .map(item => (item.type === "text" ? item.text : ""))
     .filter(Boolean)
     .join("\n");
+} else if (data.error) {
+  console.error('API Error:', data.error);
+  setMessages(prev => [...prev, { 
+    role: 'assistant', 
+    content: "I apologize, but I encountered an error: " + data.error.message 
+  }]);
+  setShowQuickActions(true);
+  return;
+}
 
-  setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
-  
-  if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
-    setCurrentMode('training');
-  } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
-    setCurrentMode('image');
-  } else if (assistantResponse.includes('upgraded prompt:')) {
-    setCurrentMode('upgrade');
-  } else if (assistantResponse.includes('rewritten version:')) {
-    setCurrentMode('rewrite');
-  }
+if (!assistantResponse) {
+  setMessages(prev => [...prev, { 
+    role: 'assistant', 
+    content: "I received an empty response. Please try again." 
+  }]);
+  setShowQuickActions(true);
+  return;
+}
 
-  const isAskingQuestion = assistantResponse.includes('?') && 
-    (assistantResponse.toLowerCase().includes('do you want') ||
-     assistantResponse.toLowerCase().includes('would you like') ||
-     assistantResponse.toLowerCase().includes('which') ||
-     assistantResponse.toLowerCase().includes('what') ||
-     assistantResponse.toLowerCase().includes('can you') ||
-     assistantResponse.toLowerCase().includes('should'));
-  
-  if (!isAskingQuestion) {
-    setTimeout(() => {
+setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
+      fet
+      if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
+        setCurrentMode('training');
+      } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
+        setCurrentMode('image');
+      } else if (assistantResponse.includes('upgraded prompt:')) {
+        setCurrentMode('upgrade');
+      } else if (assistantResponse.includes('rewritten version:')) {
+        setCurrentMode('rewrite');
+      }
+
+      const isAskingQuestion = assistantResponse.includes('?') && 
+        (assistantResponse.toLowerCase().includes('do you want') ||
+         assistantResponse.toLowerCase().includes('would you like') ||
+         assistantResponse.toLowerCase().includes('which') ||
+         assistantResponse.toLowerCase().includes('what') ||
+         assistantResponse.toLowerCase().includes('can you') ||
+         assistantResponse.toLowerCase().includes('should'));
+      
+      if (!isAskingQuestion) {
+        setTimeout(() => {
+          setShowQuickActions(true);
+        }, 300);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "I apologize, but I encountered an error. Please try again." 
+      }]);
       setShowQuickActions(true);
-    }, 300);
-  }
-} catch (error) {
-  console.error("Error:", error);
- } catch (error) {
-  console.error("Error:", error);
-  setShowQuickActions(true);
-} finally {
-  setIsLoading(false);
-}
-  setShowQuickActions(true);
-} finally {
-  setIsLoading(false);
-}
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const copyToClipboard = (text, index) => {
     const match = text.match(/"([^"]*)"/);
     const textToCopy = match ? match[1] : text;
@@ -657,7 +695,7 @@ Keep responses concise and supportive. Never overwhelm the user.`;
                                 </button>
                               </div>
                             </div>
-                          </div>
+                            </div>
                         );
                       }
                       return line ? <p key={i} className="text-gray-700 mb-2">{line}</p> : null;
@@ -674,4 +712,80 @@ Keep responses concise and supportive. Never overwhelm the user.`;
               <div className="bg-white rounded-2xl p-4 shadow-md border border-indigo-100">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2
+                  <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Inactivity Prompt */}
+        {showInactivityPrompt && !showQuickActions && (
+          <div className="mb-6 animate-fade-in">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-lg p-6 border-2 border-amber-200">
+              <p className="text-gray-700 font-medium mb-4">
+                Still working on this, or would you like to try something else?
+              </p>
+              <div className="flex gap-3 mb-4">
+                <button
+                  onClick={handleContinue}
+                  className="flex-1 bg-white text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-50 transition-all border border-gray-200 font-medium"
+                >
+                  Continue this task
+                </button>
+                <button
+                  onClick={handleMainMenu}
+                  className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium"
+                >
+                  Back to main menu
+                </button>
+              </div>
+              <div className="pt-4 border-t border-amber-200">
+                <p className="text-sm text-gray-600 mb-3">Or choose a new action:</p>
+                <QuickActionButtons />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        {messages.length > 0 && showQuickActions && (
+          <div className="mb-6 animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-indigo-100">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">What's next?</h3>
+              <QuickActionButtons />
+            </div>
+          </div>
+        )}
+
+        {/* Input Area */}
+        <div className="sticky bottom-6">
+          <div className="bg-white rounded-2xl shadow-xl border border-indigo-200 p-4">
+            <div className="flex gap-3">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your prompt or idea here..."
+                className="flex-1 resize-none border-0 focus:ring-0 focus:outline-none text-gray-700 placeholder-gray-400"
+                rows="3"
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default PromptPolishPro;
