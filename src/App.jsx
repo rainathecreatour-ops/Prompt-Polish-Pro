@@ -169,11 +169,13 @@ Keep responses concise and supportive. Never overwhelm the user.`;
         content: msg.content
       }));
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+   const response = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": process.env.ANTHROPIC_API_KEY || import.meta.env.VITE_ANTHROPIC_API_KEY || "",
+    "anthropic-version": "2023-06-01"
+  },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -189,7 +191,7 @@ Keep responses concise and supportive. Never overwhelm the user.`;
         .join("\n");
 
       setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
-      
+      fet
       if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
         setCurrentMode('training');
       } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
