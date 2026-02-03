@@ -244,10 +244,7 @@ setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]
       }
     } catch (error) {
       console.error("Error:", error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I apologize, but I encountered an error. Please try again." 
-      }]);
+      
       setShowQuickActions(true);
     } finally {
       setIsLoading(false);
