@@ -181,12 +181,45 @@ Keep responses concise and supportive. Never overwhelm the user.`;
 });
 
       const data = await response.json();
-      const assistantResponse = data.content
-        .map(item => (item.type === "text" ? item.text : ""))
-        .filter(Boolean)
-        .join("\n");
 
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
+// Check if response is OK
+if (!response.ok) {
+  console.error('API Error:', data);
+  setMessages(prev => [...prev, { 
+    role: 'assistant', 
+    content: "I apologize, but I encountered an error. Please try again." 
+  }]);
+  setShowQuickActions(true);
+  return;
+}
+
+// Parse the response
+let assistantResponse = '';
+if (data.content && Array.isArray(data.content)) {
+  assistantResponse = data.content
+    .map(item => (item.type === "text" ? item.text : ""))
+    .filter(Boolean)
+    .join("\n");
+} else if (data.error) {
+  console.error('API Error:', data.error);
+  setMessages(prev => [...prev, { 
+    role: 'assistant', 
+    content: "I apologize, but I encountered an error: " + data.error.message 
+  }]);
+  setShowQuickActions(true);
+  return;
+}
+
+if (!assistantResponse) {
+  setMessages(prev => [...prev, { 
+    role: 'assistant', 
+    content: "I received an empty response. Please try again." 
+  }]);
+  setShowQuickActions(true);
+  return;
+}
+
+setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
       fet
       if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
         setCurrentMode('training');
