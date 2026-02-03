@@ -204,10 +204,12 @@ if (data.content && Array.isArray(data.content)) {
     .join("\n");
 } else if (data.error) {
   console.error('API Error:', data.error);
-  setMessages(prev => [...prev, { 
-    role: 'assistant', 
-    content: "I apologize, but I encountered an error: " + data.error.message 
-  }]);
+  } catch (error) {
+  console.error("Error:", error);
+  setShowQuickActions(true);
+} finally {
+  setIsLoading(false);
+}
   setShowQuickActions(true);
   return;
 }
@@ -248,10 +250,12 @@ setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]
       }
     } catch (error) {
       console.error("Error:", error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I apologize, but I encountered an error. Please try again." 
-      }]);
+    } catch (error) {
+  console.error("Error:", error);
+  setShowQuickActions(true);
+} finally {
+  setIsLoading(false);
+}
       setShowQuickActions(true);
     } finally {
       setIsLoading(false);
