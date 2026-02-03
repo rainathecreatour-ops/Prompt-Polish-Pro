@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, RefreshCw, Zap, BookOpen, Copy, Check, RotateCcw, Image, User, Briefcase, Lightbulb, Code, Palette, TrendingUp, MessageSquare, Film, Lock } from 'lucide-react';
 
-const PromptPolishPro = () => {
+const PromptPolishPro = () => { 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [accessCode, setAccessCode] = useState('');
   const [accessError, setAccessError] = useState('');
