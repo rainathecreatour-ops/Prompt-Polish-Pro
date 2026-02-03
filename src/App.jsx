@@ -169,20 +169,16 @@ Keep responses concise and supportive. Never overwhelm the user.`;
         content: msg.content
       }));
 
-   const response = await fetch("https://api.anthropic.com/v1/messages", {
+ const response = await fetch("/api/chat", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "x-api-key": process.env.ANTHROPIC_API_KEY || import.meta.env.VITE_ANTHROPIC_API_KEY || "",
-    "anthropic-version": "2023-06-01"
   },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [...conversationHistory, userMessage],
-        })
-      });
+  body: JSON.stringify({
+    system: systemPrompt,
+    messages: [...conversationHistory, userMessage],
+  })
+});
 
       const data = await response.json();
       const assistantResponse = data.content
