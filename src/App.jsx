@@ -218,10 +218,12 @@ Keep responses concise and supportive. Never overwhelm the user.`;
   }
 } catch (error) {
   console.error("Error:", error);
-  setMessages(prev => [...prev, { 
-    role: 'assistant', 
-    content: "I apologize, but I encountered an error. Please try again." 
-  }]);
+ } catch (error) {
+  console.error("Error:", error);
+  setShowQuickActions(true);
+} finally {
+  setIsLoading(false);
+}
   setShowQuickActions(true);
 } finally {
   setIsLoading(false);
