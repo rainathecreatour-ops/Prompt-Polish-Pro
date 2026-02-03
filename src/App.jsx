@@ -163,78 +163,69 @@ Keep responses concise and supportive. Never overwhelm the user.`;
     setShowQuickActions(false);
     setShowInactivityPrompt(false);
 
-    try {
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+   try {
+  const conversationHistory = messages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }));
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          system: systemPrompt,
-          messages: [...conversationHistory, userMessage],
-        })
-      });
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      system: systemPrompt,
+      messages: [...conversationHistory, userMessage],
+    })
+  });
 
-      const data = await response.json();
-      
-      if (!response.ok || !data.content) {
-        throw new Error('Invalid response from API');
-      }
+  const data = await response.json();
+  
+  if (!response.ok || !data.content) {
+    throw new Error('Invalid response from API');
+  }
 
-      const assistantResponse = data.content
-        .map(item => (item.type === "text" ? item.text : ""))
-        .filter(Boolean)
-        .join("\n");
+  const assistantResponse = data.content
+    .map(item => (item.type === "text" ? item.text : ""))
+    .filter(Boolean)
+    .join("\n");
 
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
-      
-      if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
-        setCurrentMode('training');
-      } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
-        setCurrentMode('image');
-      } else if (assistantResponse.includes('upgraded prompt:')) {
-        setCurrentMode('upgrade');
-      } else if (assistantResponse.includes('rewritten version:')) {
-        setCurrentMode('rewrite');
-      }
+  setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
+  
+  if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
+    setCurrentMode('training');
+  } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
+    setCurrentMode('image');
+  } else if (assistantResponse.includes('upgraded prompt:')) {
+    setCurrentMode('upgrade');
+  } else if (assistantResponse.includes('rewritten version:')) {
+    setCurrentMode('rewrite');
+  }
 
-      const isAskingQuestion = assistantResponse.includes('?') && 
-        (assistantResponse.toLowerCase().includes('do you want') ||
-         assistantResponse.toLowerCase().includes('would you like') ||
-         assistantResponse.toLowerCase().includes('which') ||
-         assistantResponse.toLowerCase().includes('what') ||
-         assistantResponse.toLowerCase().includes('can you') ||
-         assistantResponse.toLowerCase().includes('should'));
-      
-      if (!isAskingQuestion) {
-        setTimeout(() => {
-          setShowQuickActions(true);
-        }, 300);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I apologize, but I encountered an error. Please try again." 
-      }]);
+  const isAskingQuestion = assistantResponse.includes('?') && 
+    (assistantResponse.toLowerCase().includes('do you want') ||
+     assistantResponse.toLowerCase().includes('would you like') ||
+     assistantResponse.toLowerCase().includes('which') ||
+     assistantResponse.toLowerCase().includes('what') ||
+     assistantResponse.toLowerCase().includes('can you') ||
+     assistantResponse.toLowerCase().includes('should'));
+  
+  if (!isAskingQuestion) {
+    setTimeout(() => {
       setShowQuickActions(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
+    }, 300);
+  }
+} catch (error) {
+  console.error("Error:", error);
+  setMessages(prev => [...prev, { 
+    role: 'assistant', 
+    content: "I apologize, but I encountered an error. Please try again." 
+  }]);
+  setShowQuickActions(true);
+} finally {
+  setIsLoading(false);
+}
   const copyToClipboard = (text, index) => {
     const match = text.match(/"([^"]*)"/);
     const textToCopy = match ? match[1] : text;
