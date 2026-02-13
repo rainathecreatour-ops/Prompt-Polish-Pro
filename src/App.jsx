@@ -264,16 +264,17 @@ if (!assistantResponse) {
 }
 
 setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
-      fet
-      if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
-        setCurrentMode('training');
-      } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
-        setCurrentMode('image');
-      } else if (assistantResponse.includes('upgraded prompt:')) {
-        setCurrentMode('upgrade');
-      } else if (assistantResponse.includes('rewritten version:')) {
-        setCurrentMode('rewrite');
-      }
+
+if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
+  setCurrentMode('training');
+} else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
+  setCurrentMode('image');
+} else if (assistantResponse.includes('upgraded prompt:')) {
+  setCurrentMode('upgrade');
+} else if (assistantResponse.includes('rewritten version:')) {
+  setCurrentMode('rewrite');
+}
+
 
       const isAskingQuestion = assistantResponse.includes('?') && 
         (assistantResponse.toLowerCase().includes('do you want') ||
@@ -481,40 +482,42 @@ setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Prompt Polish Pro
             </h1>
-            <p className="text-gray-600">Enter your access code to continue</p>
-          </div>
+            <p className="text-gray-600">Enter your license key to continue</p>
 
-          <form onSubmit={handleAccessSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700 mb-2">
-                Access Code
-              </label>
-              <input
-                type="text"
-                id="accessCode"
-                value={accessCode}
-                onChange={(e) => {
-                  setAccessCode(e.target.value);
-                  setAccessError('');
-                }}
-                placeholder="Enter your access code"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-0 outline-none transition-all text-center text-lg tracking-wider uppercase"
-                autoFocus
-              />
-              {accessError && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <span>⚠️</span> {accessError}
-                </p>
-              )}
-            </div>
+<form onSubmit={handleAccessSubmit} className="space-y-4">
+  <div>
+    <label htmlFor="licenseKey" className="block text-sm font-medium text-gray-700 mb-2">
+      License Key
+    </label>
 
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all hover:shadow-lg"
-            >
-              Access App
-            </button>
-          </form>
+    <input
+      type="text"
+      id="licenseKey"
+      value={licenseKey}
+      onChange={(e) => {
+        setLicenseKey(e.target.value);
+        setLicenseError('');
+      }}
+      placeholder="Paste your Gumroad license key"
+      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-0 outline-none transition-all text-center text-lg tracking-wider"
+      autoFocus
+    />
+
+    {licenseError && (
+      <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+        <span>⚠️</span> {licenseError}
+      </p>
+    )}
+  </div>
+
+  <button
+    type="submit"
+    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all hover:shadow-lg"
+  >
+    Access App
+  </button>
+</form>
+
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-500 text-center">
