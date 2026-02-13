@@ -4,8 +4,8 @@ import { Send, Sparkles, RefreshCw, Zap, BookOpen, Copy, Check, RotateCcw, Image
 
 const PromptPolishPro = () => { 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [accessCode, setAccessCode] = useState('');
-  const [accessError, setAccessError] = useState('');
+  const [licenseKey, setLicenseKey] = useState('');
+  const [licenseError, setLicenseError] = useState('');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,26 +23,72 @@ const PromptPolishPro = () => {
   const messagesEndRef = useRef(null);
   const inactivityTimerRef = useRef(null);
 
-  // CHANGE THIS TO YOUR DESIRED ACCESS CODE
-  const VALID_ACCESS_CODE = "PROMPT2025";
+const handleAccessSubmit = async (e) => {
+  e.preventDefault();
+  setLicenseError('');
 
-  const handleAccessSubmit = (e) => {
-    e.preventDefault();
-    if (accessCode.toUpperCase() === VALID_ACCESS_CODE) {
-      setIsAuthenticated(true);
-      setAccessError('');
-      localStorage.setItem('promptPolishAccess', 'true');
-    } else {
-      setAccessError('Invalid access code. Please try again.');
-    }
-  };
+  const key = licenseKey.trim();
+  if (!key) {
+    setLicenseError('Please enter your license key.');
+    return;
+  }
 
-  useEffect(() => {
-    const savedAccess = localStorage.getItem('promptPolishAccess');
-    if (savedAccess === 'true') {
-      setIsAuthenticated(true);
+  try {
+    const savedKey = localStorage.getItem('promptPolishLicenseKey');
+    const shouldIncrement = savedKey !== key;
+
+    const resp = await fetch('/api/verify-license', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseKey: key, increment: shouldIncrement }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || !data.ok) {
+      setLicenseError(data?.error || 'Invalid license key. Please try again.');
+      return;
     }
-  }, []);
+
+    setIsAuthenticated(true);
+    localStorage.setItem('promptPolishAccess', 'true');
+    localStorage.setItem('promptPolishLicenseKey', key);
+  } catch (err) {
+    console.error(err);
+    setLicenseError('Could not verify license key. Please try again.');
+  }
+};
+
+useEffect(() => {
+  const savedAccess = localStorage.getItem('promptPolishAccess');
+  const savedKey = localStorage.getItem('promptPolishLicenseKey');
+
+  if (savedAccess === 'true' && savedKey) {
+    (async () => {
+      try {
+        const resp = await fetch('/api/verify-license', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ licenseKey: savedKey, increment: false }),
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.ok) {
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem('promptPolishAccess');
+          localStorage.removeItem('promptPolishLicenseKey');
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      }
+    })();
+  }
+}, []);
+
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
