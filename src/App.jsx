@@ -1,8 +1,25 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, RefreshCw, Zap, BookOpen, Copy, Check, RotateCcw, Image, User, Briefcase, Lightbulb, Code, Palette, TrendingUp, MessageSquare, Film, Lock } from 'lucide-react';
+import {
+  Send,
+  Sparkles,
+  RefreshCw,
+  BookOpen,
+  Copy,
+  Check,
+  RotateCcw,
+  Image,
+  User,
+  Briefcase,
+  Lightbulb,
+  Code,
+  Palette,
+  TrendingUp,
+  MessageSquare,
+  Film,
+  Lock
+} from 'lucide-react';
 
-const PromptPolishPro = () => { 
+const PromptPolishPro = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [licenseKey, setLicenseKey] = useState('');
   const [licenseError, setLicenseError] = useState('');
@@ -20,75 +37,75 @@ const PromptPolishPro = () => {
     preferredLength: null,
     mode: null
   });
+
   const messagesEndRef = useRef(null);
   const inactivityTimerRef = useRef(null);
 
-const handleAccessSubmit = async (e) => {
-  e.preventDefault();
-  setLicenseError('');
+  const handleAccessSubmit = async (e) => {
+    e.preventDefault();
+    setLicenseError('');
 
-  const key = licenseKey.trim();
-  if (!key) {
-    setLicenseError('Please enter your license key.');
-    return;
-  }
-
-  try {
-    const savedKey = localStorage.getItem('promptPolishLicenseKey');
-    const shouldIncrement = savedKey !== key;
-
-    const resp = await fetch('/api/verify-license', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseKey: key, increment: shouldIncrement }),
-    });
-
-    const data = await resp.json();
-
-    if (!resp.ok || !data.ok) {
-      setLicenseError(data?.error || 'Invalid license key. Please try again.');
+    const key = licenseKey.trim();
+    if (!key) {
+      setLicenseError('Please enter your license key.');
       return;
     }
 
-    setIsAuthenticated(true);
-    localStorage.setItem('promptPolishAccess', 'true');
-    localStorage.setItem('promptPolishLicenseKey', key);
-  } catch (err) {
-    console.error(err);
-    setLicenseError('Could not verify license key. Please try again.');
-  }
-};
+    try {
+      const savedKey = localStorage.getItem('promptPolishLicenseKey');
+      const shouldIncrement = savedKey !== key;
 
-useEffect(() => {
-  const savedAccess = localStorage.getItem('promptPolishAccess');
-  const savedKey = localStorage.getItem('promptPolishLicenseKey');
+      const resp = await fetch('/api/verify-license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseKey: key, increment: shouldIncrement }),
+      });
 
-  if (savedAccess === 'true' && savedKey) {
-    (async () => {
-      try {
-        const resp = await fetch('/api/verify-license', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ licenseKey: savedKey, increment: false }),
-        });
+      const data = await resp.json();
 
-        const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        setLicenseError(data?.error || 'Invalid license key. Please try again.');
+        return;
+      }
 
-        if (resp.ok && data.ok) {
-          setIsAuthenticated(true);
-        } else {
-          localStorage.removeItem('promptPolishAccess');
-          localStorage.removeItem('promptPolishLicenseKey');
+      setIsAuthenticated(true);
+      localStorage.setItem('promptPolishAccess', 'true');
+      localStorage.setItem('promptPolishLicenseKey', key);
+    } catch (err) {
+      console.error(err);
+      setLicenseError('Could not verify license key. Please try again.');
+    }
+  };
+
+  // Re-verify saved license on reload (no increment)
+  useEffect(() => {
+    const savedAccess = localStorage.getItem('promptPolishAccess');
+    const savedKey = localStorage.getItem('promptPolishLicenseKey');
+
+    if (savedAccess === 'true' && savedKey) {
+      (async () => {
+        try {
+          const resp = await fetch('/api/verify-license', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ licenseKey: savedKey, increment: false }),
+          });
+
+          const data = await resp.json();
+
+          if (resp.ok && data.ok) {
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem('promptPolishAccess');
+            localStorage.removeItem('promptPolishLicenseKey');
+            setIsAuthenticated(false);
+          }
+        } catch {
           setIsAuthenticated(false);
         }
-      } catch {
-        setIsAuthenticated(false);
-      }
-    })();
-  }
-}, []);
-
-
+      })();
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -216,74 +233,71 @@ Keep responses concise and supportive. Never overwhelm the user.`;
         content: msg.content
       }));
 
- const response = await fetch("/api/chat", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    system: systemPrompt,
-    messages: [...conversationHistory, userMessage],
-  })
-});
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: [...conversationHistory, userMessage],
+        })
+      });
 
       const data = await response.json();
 
-// Check if response is OK
-if (!response.ok) {
-  console.error('API Error:', data);
- 
-  setShowQuickActions(true);
-  return;
-}
+      if (!response.ok) {
+        console.error('API Error:', data);
+        setShowQuickActions(true);
+        return;
+      }
 
-// Parse the response
-let assistantResponse = '';
-if (data.content && Array.isArray(data.content)) {
-  assistantResponse = data.content
-    .map(item => (item.type === "text" ? item.text : ""))
-    .filter(Boolean)
-    .join("\n");
-} else if (data.error) {
-  console.error('API Error:', data.error);
-  setMessages(prev => [...prev, { 
-    role: 'assistant', 
-    content: "I apologize, but I encountered an error: " + data.error.message 
-  }]);
-  setShowQuickActions(true);
-  return;
-}
+      let assistantResponse = '';
+      if (data.content && Array.isArray(data.content)) {
+        assistantResponse = data.content
+          .map(item => (item.type === "text" ? item.text : ""))
+          .filter(Boolean)
+          .join("\n");
+      } else if (data.error) {
+        console.error('API Error:', data.error);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: "I apologize, but I encountered an error: " + data.error.message
+        }]);
+        setShowQuickActions(true);
+        return;
+      }
 
-if (!assistantResponse) {
-  setMessages(prev => [...prev, { 
-    role: 'assistant', 
-    content: "I received an empty response. Please try again." 
-  }]);
-  setShowQuickActions(true);
-  return;
-}
+      if (!assistantResponse) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: "I received an empty response. Please try again."
+        }]);
+        setShowQuickActions(true);
+        return;
+      }
 
-setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: assistantResponse }]);
 
-if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
-  setCurrentMode('training');
-} else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
-  setCurrentMode('image');
-} else if (assistantResponse.includes('upgraded prompt:')) {
-  setCurrentMode('upgrade');
-} else if (assistantResponse.includes('rewritten version:')) {
-  setCurrentMode('rewrite');
-}
+      if (assistantResponse.toLowerCase().includes('training') || assistantResponse.toLowerCase().includes('exercise')) {
+        setCurrentMode('training');
+      } else if (assistantResponse.toLowerCase().includes('image tool') || assistantResponse.toLowerCase().includes('character')) {
+        setCurrentMode('image');
+      } else if (assistantResponse.includes('upgraded prompt:')) {
+        setCurrentMode('upgrade');
+      } else if (assistantResponse.includes('rewritten version:')) {
+        setCurrentMode('rewrite');
+      }
 
-
-      const isAskingQuestion = assistantResponse.includes('?') && 
+      const isAskingQuestion =
+        assistantResponse.includes('?') &&
         (assistantResponse.toLowerCase().includes('do you want') ||
-         assistantResponse.toLowerCase().includes('would you like') ||
-         assistantResponse.toLowerCase().includes('which') ||
-         assistantResponse.toLowerCase().includes('what') ||
-         assistantResponse.toLowerCase().includes('can you') ||
-         assistantResponse.toLowerCase().includes('should'));
-      
+          assistantResponse.toLowerCase().includes('would you like') ||
+          assistantResponse.toLowerCase().includes('which') ||
+          assistantResponse.toLowerCase().includes('what') ||
+          assistantResponse.toLowerCase().includes('can you') ||
+          assistantResponse.toLowerCase().includes('should'));
+
       if (!isAskingQuestion) {
         setTimeout(() => {
           setShowQuickActions(true);
@@ -291,7 +305,6 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
       }
     } catch (error) {
       console.error("Error:", error);
-      
       setShowQuickActions(true);
     } finally {
       setIsLoading(false);
@@ -308,7 +321,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
   const copyToClipboard = (text, index) => {
     const match = text.match(/"([^"]*)"/);
     const textToCopy = match ? match[1] : text;
-    
+
     navigator.clipboard.writeText(textToCopy);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
@@ -470,7 +483,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
     return modes[currentMode];
   };
 
-  // Access Code Screen
+  // License Key Screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-6">
@@ -483,46 +496,46 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
               Prompt Polish Pro
             </h1>
             <p className="text-gray-600">Enter your license key to continue</p>
+          </div>
 
-<form onSubmit={handleAccessSubmit} className="space-y-4">
-  <div>
-    <label htmlFor="licenseKey" className="block text-sm font-medium text-gray-700 mb-2">
-      License Key
-    </label>
+          <form onSubmit={handleAccessSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="licenseKey" className="block text-sm font-medium text-gray-700 mb-2">
+                License Key
+              </label>
 
-    <input
-      type="text"
-      id="licenseKey"
-      value={licenseKey}
-      onChange={(e) => {
-        setLicenseKey(e.target.value);
-        setLicenseError('');
-      }}
-      placeholder="Paste your Gumroad license key"
-      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-0 outline-none transition-all text-center text-lg tracking-wider"
-      autoFocus
-    />
+              <input
+                type="text"
+                id="licenseKey"
+                value={licenseKey}
+                onChange={(e) => {
+                  setLicenseKey(e.target.value);
+                  setLicenseError('');
+                }}
+                placeholder="Paste your Gumroad license key"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-0 outline-none transition-all text-center text-lg tracking-wider"
+                autoFocus
+              />
 
-    {licenseError && (
-      <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-        <span>⚠️</span> {licenseError}
-      </p>
-    )}
-  </div>
+              {licenseError && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <span>⚠️</span> {licenseError}
+                </p>
+              )}
+            </div>
 
-  <button
-    type="submit"
-    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all hover:shadow-lg"
-  >
-    Access App
-  </button>
-</form>
-
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all hover:shadow-lg"
+            >
+              Access App
+            </button>
+          </form>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-500 text-center">
-              Don't have an access code?<br />
-              Contact support or check your purchase email.
+              Don&apos;t have a license key?<br />
+              Check your Gumroad purchase email.
             </p>
           </div>
         </div>
@@ -558,7 +571,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
           animation: pulse-glow 2s ease-in-out infinite;
         }
       `}</style>
-      
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-indigo-100 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4">
@@ -584,6 +597,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
               </button>
             )}
           </div>
+
           {currentMode && (
             <div className="mt-3 flex items-center gap-2">
               {(() => {
@@ -613,7 +627,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
                 Choose your category to get started with tailored prompt templates, or use the quick actions below.
               </p>
-              
+
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Choose Your Category</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {categories.map((category, idx) => {
@@ -736,7 +750,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
                                 </button>
                               </div>
                             </div>
-                            </div>
+                          </div>
                         );
                       }
                       return line ? <p key={i} className="text-gray-700 mb-2">{line}</p> : null;
@@ -748,6 +762,7 @@ if (assistantResponse.toLowerCase().includes('training') || assistantResponse.to
               </div>
             </div>
           ))}
+
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white rounded-2xl p-4 shadow-md border border-indigo-100">
